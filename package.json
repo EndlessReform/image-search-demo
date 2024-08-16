@@ -14,6 +14,9 @@
     "shadcn": "npx shadcn-ui add"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.2.1",
+    "@electric-sql/pglite-react": "^0.2.1",
+    "@electric-sql/pglite-repl": "^0.2.1",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
