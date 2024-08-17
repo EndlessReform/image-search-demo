@@ -20,12 +20,14 @@ async function initializeModels() {
     processor = await AutoProcessor.from_pretrained(
       "Xenova/clip-vit-base-patch32"
     );
-    tokenizer = await AutoTokenizer.from_pretrained("jinaai/jina-clip-v1");
+    tokenizer = await AutoTokenizer.from_pretrained(
+      "Xenova/clip-vit-base-patch32"
+    );
     visionModel = await CLIPVisionModelWithProjection.from_pretrained(
       "Xenova/clip-vit-base-patch32"
     );
     textModel = await CLIPTextModelWithProjection.from_pretrained(
-      "jinaai/jina-clip-v1"
+      "Xenova/clip-vit-base-patch32"
     );
     const end = performance.now();
 
