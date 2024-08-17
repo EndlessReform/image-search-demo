@@ -8,6 +8,10 @@ export function DirectorySelector() {
     (state) => state.setIsDirectorySelected
   );
 
+  const setDirectoryName = useImageGalleryStore(
+    (state) => state.setDirectoryName
+  );
+
   const handleSelectDirectory = async () => {
     try {
       const dirHandle = await window.showDirectoryPicker();
@@ -19,6 +23,7 @@ export function DirectorySelector() {
       }
       setImages(newImages);
       setIsDirectorySelected(true);
+      setDirectoryName(dirHandle.name); // Save the directory name
     } catch (err) {
       console.error("Error loading images:", err);
     }
