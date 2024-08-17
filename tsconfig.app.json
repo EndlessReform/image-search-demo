@@ -24,7 +24,8 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["@types/wicg-file-system-access"]
   },
   "include": ["src"]
 }
