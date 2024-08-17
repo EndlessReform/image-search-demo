@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import ClipWorker from "./clip.worker?worker";
 
-// Update the Embedding type to be an array of number arrays
 type Embedding = number[][] | null;
 
-// Define the hook's return type
 interface ClipEmbeddingsHook {
   embedImage: (images: File[]) => Promise<Embedding>;
   embedText: (text: string[]) => Promise<Embedding>;
@@ -12,7 +10,6 @@ interface ClipEmbeddingsHook {
   error: Error | null;
 }
 
-// Define the worker message types
 type WorkerMessageType = "initialize" | "embedImage" | "embedText";
 type WorkerResponseType =
   | "initialized"
@@ -29,6 +26,8 @@ interface WorkerResponse {
   type: WorkerResponseType;
   result?: Embedding;
   error?: string;
+  time?: number;
+  initTime?: number;
 }
 
 const useClipEmbeddings = (): ClipEmbeddingsHook => {
@@ -41,10 +40,11 @@ const useClipEmbeddings = (): ClipEmbeddingsHook => {
     setWorker(clipWorker);
 
     clipWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      const { type, error } = event.data;
+      const { type, error, initTime } = event.data;
       switch (type) {
         case "initialized":
           setIsLoading(false);
+          console.log(`CLIP models initialized in ${initTime?.toFixed(2)}ms`);
           break;
         case "error":
           setError(new Error(error));
@@ -67,9 +67,10 @@ const useClipEmbeddings = (): ClipEmbeddingsHook => {
         }
 
         const messageHandler = (event: MessageEvent<WorkerResponse>) => {
-          const { type, result, error } = event.data;
+          const { type, result, error, time } = event.data;
           if (type === "imageEmbedding") {
             worker.removeEventListener("message", messageHandler);
+            console.log(`Image embedding completed in ${time?.toFixed(2)}ms`);
             resolve(result || null);
           } else if (type === "error") {
             worker.removeEventListener("message", messageHandler);
@@ -96,9 +97,10 @@ const useClipEmbeddings = (): ClipEmbeddingsHook => {
         }
 
         const messageHandler = (event: MessageEvent<WorkerResponse>) => {
-          const { type, result, error } = event.data;
+          const { type, result, error, time } = event.data;
           if (type === "textEmbedding") {
             worker.removeEventListener("message", messageHandler);
+            console.log(`Text embedding completed in ${time?.toFixed(2)}ms`);
             resolve(result || null);
           } else if (type === "error") {
             worker.removeEventListener("message", messageHandler);
