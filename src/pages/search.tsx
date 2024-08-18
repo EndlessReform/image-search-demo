@@ -1,7 +1,15 @@
-import { memo, useState } from "react";
+import React, { memo, useState, useCallback } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { usePGlite } from "@electric-sql/pglite-react";
 import useClipEmbeddings from "@/hooks/useClipEmbeddings";
 import { useImageGalleryStore } from "@/hooks/useImageGalleryStore";
@@ -14,18 +22,17 @@ interface FileSearchResult {
   distance: number;
 }
 
-// TODO: Add pagination
-const MAX_RESULT_COUNT = 20;
-// TODO: Totally arbitrary
-const MAX_DISTANCE = 0.755;
-
 const SearchBarComponent = ({
+  resultCount,
   setSearchResults,
 }: {
+  resultCount: number;
   setSearchResults: (results: FileSearchResult[]) => void;
 }) => {
   const { isLoading, embedText, error } = useClipEmbeddings();
   const [searchTerm, setSearchTerm] = useState("");
+  const [maxDistance, setMaxDistance] = useState(0.755);
+  const [maxResults, setMaxResults] = useState("20");
   const directoryHandle = useImageGalleryStore(
     (state) => state.directoryHandle
   );
@@ -43,31 +50,72 @@ const SearchBarComponent = ({
             ORDER BY distance ASC
             LIMIT $3;
             `,
-          [`[${embeddings[0]}]`, directoryHandle?.name, MAX_RESULT_COUNT]
+          [
+            `[${embeddings[0]}]`,
+            directoryHandle?.name,
+            parseInt(maxResults, 10),
+          ]
         );
-        console.log(results);
         setSearchResults(
           (results.rows as FileSearchResult[]).filter(
-            (r) => r.distance <= MAX_DISTANCE
+            (r) => r.distance <= maxDistance
           )
         );
       }
     }
   };
 
+  const handleDistanceChange = useCallback((value: number[]) => {
+    setMaxDistance(value[0]);
+  }, []);
+
   return (
-    <form onSubmit={handleSearch} className="flex mb-4 space-x-2">
-      <Input
-        type="text"
-        placeholder="Search files..."
-        className="flex-grow"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      <Button type="submit" className="ml-2">
-        <Search className="w-4 h-4 mr-2" /> Search
-      </Button>
-    </form>
+    <div className="mb-4 space-y-4">
+      <form onSubmit={handleSearch} className="flex space-x-2">
+        <Input
+          type="text"
+          placeholder="Search files..."
+          className="flex-grow"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <Button type="submit">
+          <Search className="w-4 h-4 mr-2" /> Search
+        </Button>
+      </form>
+      <div className="flex items-center">
+        <div className="flex items-center mr-8 space-x-4">
+          <span className="text-sm font-medium">Max Results:</span>
+          <Select value={maxResults} onValueChange={setMaxResults}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select max results" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="35">35</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm font-medium">Max Distance:</span>
+          <Slider
+            defaultValue={[0.755]}
+            min={0.7}
+            max={0.8}
+            step={0.001}
+            value={[maxDistance]}
+            onValueChange={handleDistanceChange}
+            className="w-64"
+          />
+          <span className="text-sm">{maxDistance.toFixed(3)}</span>
+        </div>
+        <p className="ml-auto text-sm font-normal text-gray-500">
+          Results: <span className="font-medium text-black">{resultCount}</span>
+        </p>
+      </div>
+    </div>
   );
 };
 
@@ -100,7 +148,10 @@ const FileSearchUI = () => {
   return (
     <div className="container p-4 mx-auto">
       <h1 className="mb-4 text-2xl font-bold">Image Search</h1>
-      <SearchBarComponent setSearchResults={setSearchResults} />
+      <SearchBarComponent
+        resultCount={searchResults.length}
+        setSearchResults={setSearchResults}
+      />
       <div className="space-y-2">
         <Masonry
           items={searchResults}

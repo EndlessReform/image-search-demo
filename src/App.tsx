@@ -18,7 +18,7 @@ function App() {
   useEffect(() => {
     // Start up the DB
     db.exec(`
-      CREATE EXTENSION vector;
+      CREATE EXTENSION IF NOT EXISTS vector;
       CREATE TABLE IF NOT EXISTS image_search (
         id SERIAL PRIMARY KEY,
         fname TEXT NOT NULL,
@@ -26,7 +26,7 @@ function App() {
         embedding vector(512),
         UNIQUE (directory, fname)
       );
-      CREATE INDEX idx_fname ON image_search(fname);
+      CREATE INDEX IF NOT EXISTS idx_fname ON image_search(fname);
       `);
   }, []);
 
