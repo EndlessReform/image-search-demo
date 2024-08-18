@@ -41,7 +41,7 @@ export function UploadButton() {
       disabled={selectedImages.size === 0}
       className="flex items-center"
     >
-      <Upload className="w-4 h-4 mr-2" /> Upload Selected
+      <Upload className="w-4 h-4 mr-2" /> Index Selected
     </Button>
   );
 }

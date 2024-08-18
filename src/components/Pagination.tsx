@@ -16,7 +16,7 @@ export function Pagination({ imagesPerPage }: IPaginationProps) {
   const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE);
 
   return (
-    <PaginationUI>
+    <PaginationUI className="items-center">
       <Button
         variant="outline"
         size="sm"

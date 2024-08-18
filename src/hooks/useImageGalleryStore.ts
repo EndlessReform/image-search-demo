@@ -1,6 +1,6 @@
 import create from "zustand";
 
-interface ImageEntry {
+export interface ImageEntry {
   handle: FileSystemFileHandle;
   name: string;
 }
@@ -8,16 +8,16 @@ interface ImageEntry {
 interface ImageGalleryState {
   images: ImageEntry[];
   currentPage: number;
-  selectedImages: Set<number>;
+  selectedImages: Set<string>;
   isDirectorySelected: boolean;
-  directoryName: string; // New state property
+  directoryName: string;
   setImages: (images: ImageEntry[]) => void;
   setCurrentPage: (page: number) => void;
-  toggleImageSelection: (indices: number | number[]) => void;
+  toggleImageSelection: (names: string | string[]) => void;
   clearImageSelection: () => void;
   setIsDirectorySelected: (isSelected: boolean) => void;
-  selectAllOnCurrentPage: (imagesPerPage: number) => void;
-  setDirectoryName: (name: string) => void; // New action
+  selectAllOnCurrentPage: (currentPageImages: ImageEntry[]) => void;
+  setDirectoryName: (name: string) => void;
 }
 
 export const useImageGalleryStore = create<ImageGalleryState>((set) => ({
@@ -25,42 +25,34 @@ export const useImageGalleryStore = create<ImageGalleryState>((set) => ({
   currentPage: 1,
   selectedImages: new Set(),
   isDirectorySelected: false,
-  directoryName: "", // Initialize directory name
+  directoryName: "",
   setImages: (images) => set({ images }),
   setCurrentPage: (page) => set({ currentPage: page }),
-  toggleImageSelection: (indices) =>
+  toggleImageSelection: (names) =>
     set((state) => {
       const newSet = new Set(state.selectedImages);
-      const toggleIndex = (index: number) => {
-        if (newSet.has(index)) {
-          newSet.delete(index);
+      const toggleName = (name: string) => {
+        if (newSet.has(name)) {
+          newSet.delete(name);
         } else {
-          newSet.add(index);
+          newSet.add(name);
         }
       };
-
-      if (Array.isArray(indices)) {
-        indices.forEach(toggleIndex);
+      if (Array.isArray(names)) {
+        names.forEach(toggleName);
       } else {
-        toggleIndex(indices);
+        toggleName(names);
       }
       return { selectedImages: newSet };
     }),
   clearImageSelection: () => set({ selectedImages: new Set() }),
   setIsDirectorySelected: (isSelected) =>
     set({ isDirectorySelected: isSelected }),
-  selectAllOnCurrentPage: (imagesPerPage) =>
+  selectAllOnCurrentPage: (currentPageImages) =>
     set((state) => {
-      const startIndex = (state.currentPage - 1) * imagesPerPage;
-      const endIndex = Math.min(
-        startIndex + imagesPerPage,
-        state.images.length
-      );
       const newSelectedImages = new Set(state.selectedImages);
-      for (let i = startIndex; i < endIndex; i++) {
-        newSelectedImages.add(i);
-      }
+      currentPageImages.forEach((image) => newSelectedImages.add(image.name));
       return { selectedImages: newSelectedImages };
     }),
-  setDirectoryName: (name) => set({ directoryName: name }), // New action to set directory name
+  setDirectoryName: (name) => set({ directoryName: name }),
 }));

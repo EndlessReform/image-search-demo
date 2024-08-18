@@ -1,13 +1,17 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { useMemo } from "react";
+import { Masonry } from "masonic";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useImageGalleryStore } from "../hooks/useImageGalleryStore";
+import { ImagePreview } from "./ImagePreview";
+import { Pagination } from "@/components/Pagination";
+import { useImageGalleryStore, ImageEntry } from "@/hooks/useImageGalleryStore";
+import { useLiveQuery } from "@electric-sql/pglite-react";
 
 interface IImageGridProps {
   imagesPerPage?: number;
 }
 
-export function ImageGrid({ imagesPerPage }: IImageGridProps) {
-  const IMAGES_PER_PAGE = imagesPerPage ?? 12;
+export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
   const images = useImageGalleryStore((state) => state.images);
   const currentPage = useImageGalleryStore((state) => state.currentPage);
   const selectedImages = useImageGalleryStore((state) => state.selectedImages);
@@ -22,51 +26,72 @@ export function ImageGrid({ imagesPerPage }: IImageGridProps) {
   );
   const directoryName = useImageGalleryStore((state) => state.directoryName);
 
-  const startIndex = (currentPage - 1) * IMAGES_PER_PAGE;
-  const endIndex = startIndex + IMAGES_PER_PAGE;
+  const dbItems = useLiveQuery(
+    `SELECT fname FROM image_search WHERE directory = $1;`,
+    [directoryName]
+  );
+  const dbFnames = dbItems?.rows.map((r: any) => r.fname);
+
+  const startIndex = (currentPage - 1) * imagesPerPage;
+  const endIndex = startIndex + imagesPerPage;
   const currentImages = images.slice(startIndex, endIndex);
 
   const handleSelectAll = () => {
-    const allSelected = currentImages.every((_, index) =>
-      selectedImages.has(startIndex + index)
+    const allSelected = currentImages.every((image) =>
+      selectedImages.has(image.name)
     );
     if (allSelected) {
       clearImageSelection();
     } else {
-      selectAllOnCurrentPage(IMAGES_PER_PAGE);
+      selectAllOnCurrentPage(currentImages);
     }
   };
+
+  const MasonryCard = ({ data }: { data: ImageEntry }) => (
+    <div
+      className={`mb-4 cursor-pointer overflow-hidden transition-all duration-200 ${
+        selectedImages.has(data.name)
+          ? "ring-2 ring-blue-500 shadow-lg"
+          : "hover:shadow-md"
+      }`}
+      onClick={() => toggleImageSelection(data.name)}
+    >
+      <div className="relative">
+        <ImagePreview handle={data.handle} />
+        <div className="absolute bottom-0 left-0 right-0 p-2 text-white bg-black bg-opacity-50 rounded-b-sm">
+          <div className="flex items-center justify-between">
+            <p className="flex-1 mr-2 text-sm truncate">{data.name}</p>
+            {dbFnames?.includes(data.name) ? (
+              <Check className="flex-shrink-0 text-green-500" size={16} />
+            ) : (
+              <X className="flex-shrink-0 text-red-500" size={16} />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">
-          {directoryName ? `${directoryName} - Image Gallery` : "Image Gallery"}
-        </h2>
+        <h2 className="text-xl font-bold shrink-0">Image Gallery</h2>
+        <Pagination imagesPerPage={imagesPerPage} />
         <Button onClick={handleSelectAll}>
-          {currentImages.every((_, index) =>
-            selectedImages.has(startIndex + index)
-          )
+          {currentImages.every((image) => selectedImages.has(image.name))
             ? "Deselect All"
             : "Select All"}
         </Button>
       </div>
-      <div className="grid grid-cols-3 gap-4 mb-4 md:grid-cols-4">
-        {currentImages.map((image, index) => (
-          <Card
-            key={startIndex + index}
-            className={`cursor-pointer ${
-              selectedImages.has(startIndex + index)
-                ? "ring-2 ring-blue-500"
-                : ""
-            }`}
-            onClick={() => toggleImageSelection(startIndex + index)}
-          >
-            <CardContent className="p-2">
-              <p>{image.name}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <Masonry
+        items={currentImages}
+        render={MasonryCard}
+        columnGutter={16}
+        columnWidth={250}
+        overscanBy={5}
+      />
+      <div className="flex justify-center mt-4">
+        <Pagination imagesPerPage={imagesPerPage} />
       </div>
     </>
   );

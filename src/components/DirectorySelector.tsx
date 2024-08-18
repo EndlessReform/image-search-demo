@@ -7,7 +7,6 @@ export function DirectorySelector() {
   const setIsDirectorySelected = useImageGalleryStore(
     (state) => state.setIsDirectorySelected
   );
-
   const setDirectoryName = useImageGalleryStore(
     (state) => state.setDirectoryName
   );
@@ -23,23 +22,15 @@ export function DirectorySelector() {
       }
       setImages(newImages);
       setIsDirectorySelected(true);
-      setDirectoryName(dirHandle.name); // Save the directory name
+      setDirectoryName(dirHandle.name);
     } catch (err) {
       console.error("Error loading images:", err);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-64">
-      <Button
-        onClick={handleSelectDirectory}
-        className="flex items-center mb-4"
-      >
-        <FolderOpen className="w-4 h-4 mr-2" /> Select Image Directory
-      </Button>
-      <p className="text-gray-600">
-        Please select a directory containing images to start.
-      </p>
-    </div>
+    <Button onClick={handleSelectDirectory} className="flex items-center">
+      <FolderOpen className="w-4 h-4 mr-2" /> Select Image Directory
+    </Button>
   );
 }

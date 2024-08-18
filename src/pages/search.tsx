@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Search, File, Folder } from "lucide-react";
+import { Search, File } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePGlite } from "@electric-sql/pglite-react";
 import useClipEmbeddings from "@/hooks/useClipEmbeddings";
+import { useImageGalleryStore } from "@/hooks/useImageGalleryStore";
 
 interface FileSearchResult {
   fname: string;
@@ -16,6 +17,7 @@ const FileSearchUI = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { isLoading, embedText, error } = useClipEmbeddings();
   const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
+  const directoryName = useImageGalleryStore((state) => state.directoryName);
   const db = usePGlite();
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -26,10 +28,11 @@ const FileSearchUI = () => {
         const results = await db.query(
           `SELECT fname, directory, embedding <=> $1 AS distance 
             FROM image_search
+            WHERE directory = $2
             ORDER BY distance ASC
             LIMIT 10;
             `,
-          [`[${embeddings[0]}]`]
+          [`[${embeddings[0]}]`, directoryName]
         );
         console.log(results);
         setSearchResults(results.rows as FileSearchResult[]);

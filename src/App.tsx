@@ -7,6 +7,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { PGliteProvider } from "@electric-sql/pglite-react";
 import { live } from "@electric-sql/pglite/live";
 import { vector } from "@electric-sql/pglite/vector";
+import Layout from "@/components/Layout";
 
 const db = await PGlite.create({
   dataDir: "idb://pg-todo-test",
@@ -31,7 +32,9 @@ function App() {
 
   return (
     <Suspense fallback={<p>Loading...</p>}>
-      <PGliteProvider db={db}>{useRoutes(routes)}</PGliteProvider>
+      <PGliteProvider db={db}>
+        <Layout>{useRoutes(routes)}</Layout>
+      </PGliteProvider>
     </Suspense>
   );
 }
