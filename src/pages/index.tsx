@@ -1,53 +1,43 @@
-import React from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useImageGalleryStore } from "@/hooks/useImageGalleryStore";
+import { DirectorySelector } from "@/components/DirectorySelector";
+import { UploadWidget } from "@/components/UploadWidget";
+import useClipEmbeddings from "@/hooks/useClipEmbeddings";
+import { Loader2 } from "lucide-react";
 
-const Splash: React.FC = () => (
-  <div className="min-h-screen bg-background dark:bg-background text-foreground dark:text-foreground flex flex-col justify-center items-center p-4">
-    <Card className="w-[350px] max-w-full">
-      <CardHeader>
-        <CardTitle className="text-3xl font-bold text-primary">
-          Welcome to Your App
-        </CardTitle>
-        <CardDescription>
-          A Vite + TS + Tailwind + shadcn/ui template
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">
-          This template provides a minimal setup to get React working in Vite
-          with HMR and some ESLint rules.
-        </p>
-      </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row gap-4">
-        <Button asChild>
-          <a
-            href="https://vitejs.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn about Vite
-          </a>
-        </Button>
-        <Button asChild variant="outline">
-          <a
-            href="https://ui.shadcn.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Explore shadcn/ui
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
-  </div>
-);
+export default function ImageGallery() {
+  const { isLoading, error } = useClipEmbeddings();
+  const isDirectorySelected = useImageGalleryStore(
+    (state) => state.directoryHandle !== null
+  );
 
-export default Splash;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="ml-2">Loading CLIP model...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error: {error.message}</div>;
+  }
+
+  return (
+    <div className="container p-4 mx-auto">
+      <h1 className="mb-4 text-2xl font-bold">Index images for search</h1>
+      {!isDirectorySelected ? (
+        <div className="flex flex-col items-center justify-center h-64">
+          <DirectorySelector />
+          <p className="mt-4 text-gray-600">
+            Please select a directory containing images to start.
+          </p>
+        </div>
+      ) : (
+        <>
+          <UploadWidget />
+        </>
+      )}
+    </div>
+  );
+}
