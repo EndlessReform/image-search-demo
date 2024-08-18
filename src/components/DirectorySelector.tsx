@@ -1,36 +1,40 @@
 import { Button } from "@/components/ui/button";
 import { FolderOpen } from "lucide-react";
-import { useImageGalleryStore } from "../hooks/useImageGalleryStore";
+import { useImageGalleryStore } from "@/hooks/useImageGalleryStore";
 
 export function DirectorySelector() {
-  const setImages = useImageGalleryStore((state) => state.setImages);
-  const setIsDirectorySelected = useImageGalleryStore(
-    (state) => state.setIsDirectorySelected
+  const setDirectoryHandle = useImageGalleryStore(
+    (state) => state.setDirectoryHandle
   );
+  const setImages = useImageGalleryStore((state) => state.setImages);
   const setDirectoryName = useImageGalleryStore(
     (state) => state.setDirectoryName
   );
 
-  const handleSelectDirectory = async () => {
+  const handleDirectorySelect = async () => {
     try {
       const dirHandle = await window.showDirectoryPicker();
-      const newImages = [];
+      setDirectoryHandle(dirHandle);
+      setDirectoryName(dirHandle.name);
+
+      const imageEntries = [];
       for await (const entry of dirHandle.values()) {
-        if (entry.kind === "file" && entry.name.match(/\.(jpe?g|png|gif)$/i)) {
-          newImages.push({ handle: entry, name: entry.name });
+        if (
+          entry.kind === "file" &&
+          entry.name.match(/\.(jpg|jpeg|png|gif)$/i)
+        ) {
+          imageEntries.push({ handle: entry, name: entry.name });
         }
       }
-      setImages(newImages);
-      setIsDirectorySelected(true);
-      setDirectoryName(dirHandle.name);
-    } catch (err) {
-      console.error("Error loading images:", err);
+      setImages(imageEntries);
+    } catch (error) {
+      console.error("Error selecting directory:", error);
     }
   };
 
   return (
-    <Button onClick={handleSelectDirectory} className="flex items-center">
-      <FolderOpen className="w-4 h-4 mr-2" /> Select Image Directory
+    <Button onClick={handleDirectorySelect} className="flex items-center">
+      <FolderOpen className="w-4 h-4 mr-2" /> Select Directory
     </Button>
   );
 }

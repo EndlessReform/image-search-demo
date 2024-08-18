@@ -1,32 +1,14 @@
 import { useImageGalleryStore } from "@/hooks/useImageGalleryStore";
 import { DirectorySelector } from "@/components/DirectorySelector";
-import { ImageGrid } from "@/components/ImageGrid";
-import { UploadButton } from "@/components/UploadButton";
+import { UploadWidget } from "@/components/UploadWidget";
 import useClipEmbeddings from "@/hooks/useClipEmbeddings";
-import { Loader2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
-const IMAGES_PER_PAGE = 15;
+import { Loader2 } from "lucide-react";
 
 export default function ImageGallery() {
   const { isLoading, error } = useClipEmbeddings();
   const isDirectorySelected = useImageGalleryStore(
-    (state) => state.isDirectorySelected
+    (state) => state.directoryHandle !== null
   );
-  const directoryName = useImageGalleryStore((state) => state.directoryName);
-  const setIsDirectorySelected = useImageGalleryStore(
-    (state) => state.setIsDirectorySelected
-  );
-  const setDirectoryName = useImageGalleryStore(
-    (state) => state.setDirectoryName
-  );
-  const setImages = useImageGalleryStore((state) => state.setImages);
-
-  const handleDeselectDirectory = () => {
-    setImages([]);
-    setIsDirectorySelected(false);
-    setDirectoryName("");
-  };
 
   if (isLoading) {
     return (
@@ -53,22 +35,7 @@ export default function ImageGallery() {
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-            <div className="flex items-center justify-evenly">
-              <span className="mr-2">Selected directory: {directoryName}</span>
-              <Button
-                onClick={handleDeselectDirectory}
-                variant="outline"
-                size="sm"
-                className="flex items-center"
-              >
-                <X className="w-4 h-4 mr-1" /> Deselect
-              </Button>
-            </div>
-            <UploadButton />
-          </div>
-          <div className="mt-4"></div>
-          <ImageGrid imagesPerPage={IMAGES_PER_PAGE} />
+          <UploadWidget />
         </>
       )}
     </div>

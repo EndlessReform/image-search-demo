@@ -21,16 +21,7 @@ export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
   const clearImageSelection = useImageGalleryStore(
     (state) => state.clearImageSelection
   );
-  const directoryName = useImageGalleryStore((state) => state.directoryName);
 
-  const dbItems = useLiveQuery(
-    `SELECT fname FROM image_search WHERE directory = $1;`,
-    [directoryName]
-  );
-  const dbFnames = dbItems?.rows.map((r: any) => r.fname);
-
-  const startIndex = (currentPage - 1) * imagesPerPage;
-  const endIndex = startIndex + imagesPerPage;
   const currentImages = useMemo(() => {
     const startIndex = (currentPage - 1) * imagesPerPage;
     const endIndex = startIndex + imagesPerPage;
@@ -56,6 +47,14 @@ export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
       const toggleImageSelection = useImageGalleryStore(
         (state) => state.toggleImageSelection
       );
+      const dbItems = useLiveQuery(
+        `SELECT COUNT(*) FROM image_search WHERE fname = $1;`,
+        [data.name]
+      );
+      const isIndexed =
+        typeof dbItems?.rows !== "undefined" && "count" in dbItems?.rows[0]
+          ? dbItems.rows[0].count === 1
+          : false;
 
       return (
         <div
@@ -69,7 +68,7 @@ export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
             <div className="absolute bottom-0 left-0 right-0 p-2 text-white bg-black bg-opacity-50 rounded-b-sm">
               <div className="flex items-center justify-between">
                 <p className="flex-1 mr-2 text-sm truncate">{data.name}</p>
-                {dbFnames?.includes(data.name) ? (
+                {isIndexed ? (
                   <Check className="flex-shrink-0 text-green-500" size={16} />
                 ) : (
                   <X className="flex-shrink-0 text-red-500" size={16} />
