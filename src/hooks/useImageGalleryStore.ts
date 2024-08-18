@@ -8,17 +8,20 @@ export interface ImageEntry {
 interface ImageGalleryState {
   directoryHandle: FileSystemDirectoryHandle | null;
   images: ImageEntry[];
-  directoryName: string;
+  imageMap: Record<string, ImageEntry>;
   setDirectoryHandle: (handle: FileSystemDirectoryHandle | null) => void;
   setImages: (images: ImageEntry[]) => void;
-  setDirectoryName: (name: string) => void;
+  setImageMap: (images: ImageEntry[]) => void;
 }
 
 export const useImageGalleryStore = create<ImageGalleryState>((set) => ({
   directoryHandle: null,
   images: [],
-  directoryName: "",
+  imageMap: {},
   setDirectoryHandle: (handle) => set({ directoryHandle: handle }),
   setImages: (images) => set({ images }),
-  setDirectoryName: (name) => set({ directoryName: name }),
+  setImageMap: (images) =>
+    set({
+      imageMap: Object.fromEntries(images.map((image) => [image.name, image])),
+    }),
 }));

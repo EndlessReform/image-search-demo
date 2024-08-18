@@ -25,27 +25,29 @@ export function UploadWidget() {
   const setDirectoryHandle = useImageGalleryStore(
     (state) => state.setDirectoryHandle
   );
-  const directoryName = useImageGalleryStore((state) => state.directoryName);
-  const setDirectoryName = useImageGalleryStore(
-    (state) => state.setDirectoryName
-  );
   const setImages = useImageGalleryStore((state) => state.setImages);
+  const setImageMap = useImageGalleryStore((state) => state.setImageMap);
 
   const handleDeselectDirectory = () => {
     setImages([]);
+    setImageMap([]);
     setDirectoryHandle(null);
-    setDirectoryName("");
   };
 
-  const uploadImage = useCallback(
-    async (file: File, directoryName: string) => {
-      const embedding = await embedImage([file]);
-      if (embedding !== null) {
-        await db.query(
-          `INSERT INTO image_search (fname, directory, embedding)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (directory, fname) DO NOTHING;`,
-          [file.name, directoryName, `[${embedding[0]}]`]
+  const uploadImages = useCallback(
+    async (files: File[], directoryName: string) => {
+      const embeddings = await embedImage(files);
+      if (embeddings !== null) {
+        // Yes, this is inefficient, I'll fix it later
+        await Promise.all(
+          embeddings.map(async (embedding, k) => {
+            await db.query(
+              `INSERT INTO image_search (fname, directory, embedding)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (directory, fname) DO NOTHING;`,
+              [files[k].name, directoryName, `[${embedding}]`]
+            );
+          })
         );
       }
     },
@@ -80,18 +82,17 @@ export function UploadWidget() {
     const batchSize = 8;
 
     for (let i = 0; i < totalImages; i += batchSize) {
-      const batch = images.slice(i, Math.min(i + batchSize, totalImages));
-      await Promise.all(
+      const batchEndIdx = Math.min(i + batchSize, totalImages);
+      const batch = images.slice(i, batchEndIdx);
+      const files = await Promise.all(
         batch.map(async (image) => {
-          const file = await image.handle.getFile();
-
-          await uploadImage(file, directoryHandle.name);
-
-          processed++;
-          setProgress(Math.round((processed / totalImages) * 100));
+          return await image.handle.getFile();
         })
       );
+      await uploadImages(files, directoryHandle.name);
 
+      processed += batchEndIdx - i;
+      setProgress(Math.round((processed / totalImages) * 100));
       setMessage(`Processed ${processed} out of ${totalImages} images...`);
     }
 
@@ -111,7 +112,9 @@ export function UploadWidget() {
   return (
     <>
       <div className="flex items-center w-full">
-        <span className="mr-2">Selected directory: {directoryName}</span>
+        <span className="mr-2">
+          Selected directory: {directoryHandle?.name}
+        </span>
         <Button
           onClick={handleDeselectDirectory}
           variant="outline"

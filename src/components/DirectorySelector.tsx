@@ -7,15 +7,12 @@ export function DirectorySelector() {
     (state) => state.setDirectoryHandle
   );
   const setImages = useImageGalleryStore((state) => state.setImages);
-  const setDirectoryName = useImageGalleryStore(
-    (state) => state.setDirectoryName
-  );
+  const setImageMap = useImageGalleryStore((state) => state.setImageMap);
 
   const handleDirectorySelect = async () => {
     try {
       const dirHandle = await window.showDirectoryPicker();
       setDirectoryHandle(dirHandle);
-      setDirectoryName(dirHandle.name);
 
       const imageEntries = [];
       for await (const entry of dirHandle.values()) {
@@ -23,10 +20,12 @@ export function DirectorySelector() {
           entry.kind === "file" &&
           entry.name.match(/\.(jpg|jpeg|png|gif)$/i)
         ) {
-          imageEntries.push({ handle: entry, name: entry.name });
+          const newEntry = { handle: entry, name: entry.name };
+          imageEntries.push(newEntry);
         }
       }
       setImages(imageEntries);
+      setImageMap(imageEntries);
     } catch (error) {
       console.error("Error selecting directory:", error);
     }
