@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Masonry } from "masonic";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,7 @@ interface IImageGridProps {
 export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
   const images = useImageGalleryStore((state) => state.images);
   const currentPage = useImageGalleryStore((state) => state.currentPage);
-  const selectedImages = useImageGalleryStore((state) => state.selectedImages);
-  const toggleImageSelection = useImageGalleryStore(
-    (state) => state.toggleImageSelection
-  );
+
   const selectAllOnCurrentPage = useImageGalleryStore(
     (state) => state.selectAllOnCurrentPage
   );
@@ -34,11 +31,15 @@ export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
 
   const startIndex = (currentPage - 1) * imagesPerPage;
   const endIndex = startIndex + imagesPerPage;
-  const currentImages = images.slice(startIndex, endIndex);
+  const currentImages = useMemo(() => {
+    const startIndex = (currentPage - 1) * imagesPerPage;
+    const endIndex = startIndex + imagesPerPage;
+    return images.slice(startIndex, endIndex);
+  }, [images, currentPage, imagesPerPage]);
 
   const handleSelectAll = () => {
     const allSelected = currentImages.every((image) =>
-      selectedImages.has(image.name)
+      useImageGalleryStore.getState().isImageSelected(image.name)
     );
     if (allSelected) {
       clearImageSelection();
@@ -47,29 +48,39 @@ export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
     }
   };
 
-  const MasonryCard = ({ data }: { data: ImageEntry }) => (
-    <div
-      className={`mb-4 cursor-pointer overflow-hidden transition-all duration-200 ${
-        selectedImages.has(data.name)
-          ? "ring-2 ring-blue-500 shadow-lg"
-          : "hover:shadow-md"
-      }`}
-      onClick={() => toggleImageSelection(data.name)}
-    >
-      <div className="relative">
-        <ImagePreview handle={data.handle} />
-        <div className="absolute bottom-0 left-0 right-0 p-2 text-white bg-black bg-opacity-50 rounded-b-sm">
-          <div className="flex items-center justify-between">
-            <p className="flex-1 mr-2 text-sm truncate">{data.name}</p>
-            {dbFnames?.includes(data.name) ? (
-              <Check className="flex-shrink-0 text-green-500" size={16} />
-            ) : (
-              <X className="flex-shrink-0 text-red-500" size={16} />
-            )}
+  const MasonryCard = React.memo(
+    ({ data }: { data: ImageEntry }) => {
+      const isSelected = useImageGalleryStore((state) =>
+        state.isImageSelected(data.name)
+      );
+      const toggleImageSelection = useImageGalleryStore(
+        (state) => state.toggleImageSelection
+      );
+
+      return (
+        <div
+          className={`mb-4 cursor-pointer overflow-hidden transition-all duration-200 ${
+            isSelected ? "ring-2 ring-blue-500 shadow-lg" : "hover:shadow-md"
+          }`}
+          onClick={() => toggleImageSelection(data.name)}
+        >
+          <div className="relative">
+            <ImagePreview handle={data.handle} />
+            <div className="absolute bottom-0 left-0 right-0 p-2 text-white bg-black bg-opacity-50 rounded-b-sm">
+              <div className="flex items-center justify-between">
+                <p className="flex-1 mr-2 text-sm truncate">{data.name}</p>
+                {dbFnames?.includes(data.name) ? (
+                  <Check className="flex-shrink-0 text-green-500" size={16} />
+                ) : (
+                  <X className="flex-shrink-0 text-red-500" size={16} />
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      );
+    },
+    (prevProps, nextProps) => prevProps.data.name === nextProps.data.name
   );
 
   return (
@@ -77,11 +88,7 @@ export function ImageGrid({ imagesPerPage = 12 }: IImageGridProps) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold shrink-0">Image Gallery</h2>
         <Pagination imagesPerPage={imagesPerPage} />
-        <Button onClick={handleSelectAll}>
-          {currentImages.every((image) => selectedImages.has(image.name))
-            ? "Deselect All"
-            : "Select All"}
-        </Button>
+        <Button onClick={handleSelectAll}>Select All</Button>
       </div>
       <Masonry
         items={currentImages}

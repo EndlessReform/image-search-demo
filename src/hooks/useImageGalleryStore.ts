@@ -8,51 +8,45 @@ export interface ImageEntry {
 interface ImageGalleryState {
   images: ImageEntry[];
   currentPage: number;
-  selectedImages: Set<string>;
+  selectedImages: { [key: string]: boolean };
   isDirectorySelected: boolean;
   directoryName: string;
   setImages: (images: ImageEntry[]) => void;
   setCurrentPage: (page: number) => void;
-  toggleImageSelection: (names: string | string[]) => void;
+  toggleImageSelection: (name: string) => void;
   clearImageSelection: () => void;
   setIsDirectorySelected: (isSelected: boolean) => void;
   selectAllOnCurrentPage: (currentPageImages: ImageEntry[]) => void;
   setDirectoryName: (name: string) => void;
+  isImageSelected: (name: string) => boolean;
 }
 
-export const useImageGalleryStore = create<ImageGalleryState>((set) => ({
+export const useImageGalleryStore = create<ImageGalleryState>((set, get) => ({
   images: [],
   currentPage: 1,
-  selectedImages: new Set(),
+  selectedImages: {},
   isDirectorySelected: false,
   directoryName: "",
   setImages: (images) => set({ images }),
   setCurrentPage: (page) => set({ currentPage: page }),
-  toggleImageSelection: (names) =>
-    set((state) => {
-      const newSet = new Set(state.selectedImages);
-      const toggleName = (name: string) => {
-        if (newSet.has(name)) {
-          newSet.delete(name);
-        } else {
-          newSet.add(name);
-        }
-      };
-      if (Array.isArray(names)) {
-        names.forEach(toggleName);
-      } else {
-        toggleName(names);
-      }
-      return { selectedImages: newSet };
-    }),
-  clearImageSelection: () => set({ selectedImages: new Set() }),
+  toggleImageSelection: (name) =>
+    set((state) => ({
+      selectedImages: {
+        ...state.selectedImages,
+        [name]: !state.selectedImages[name],
+      },
+    })),
+  clearImageSelection: () => set({ selectedImages: {} }),
   setIsDirectorySelected: (isSelected) =>
     set({ isDirectorySelected: isSelected }),
   selectAllOnCurrentPage: (currentPageImages) =>
     set((state) => {
-      const newSelectedImages = new Set(state.selectedImages);
-      currentPageImages.forEach((image) => newSelectedImages.add(image.name));
+      const newSelectedImages = { ...state.selectedImages };
+      currentPageImages.forEach((image) => {
+        newSelectedImages[image.name] = true;
+      });
       return { selectedImages: newSelectedImages };
     }),
   setDirectoryName: (name) => set({ directoryName: name }),
+  isImageSelected: (name) => get().selectedImages[name] || false,
 }));
