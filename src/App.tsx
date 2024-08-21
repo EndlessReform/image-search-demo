@@ -1,7 +1,7 @@
 import { useEffect, Suspense } from "react";
 import { useRoutes } from "react-router-dom";
 /* This is fine: https://github.com/hannoeru/vite-plugin-pages/issues/120 */
-/** @ts-ignore */
+/** @ts-expect-error Types are misconfigured */
 import routes from "~react-pages";
 import { PGlite } from "@electric-sql/pglite";
 import { PGliteProvider } from "@electric-sql/pglite-react";

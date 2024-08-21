@@ -7,6 +7,7 @@ import {
   CLIPVisionModelWithProjection,
   CLIPTextModelWithProjection,
   RawImage,
+  env,
 } from "@huggingface/transformers";
 
 let processor: Processor,
@@ -14,20 +15,24 @@ let processor: Processor,
   visionModel: PreTrainedModel,
   textModel: PreTrainedModel;
 
+env.backends.onnx.providers = ["webgpu", "cpu"];
+
 async function initializeModels() {
   try {
     const start = performance.now();
     processor = await AutoProcessor.from_pretrained(
-      "Xenova/clip-vit-base-patch32"
+      "Xenova/clip-vit-base-patch32",
     );
     tokenizer = await AutoTokenizer.from_pretrained(
-      "Xenova/clip-vit-base-patch32"
+      "Xenova/clip-vit-base-patch32",
     );
     visionModel = await CLIPVisionModelWithProjection.from_pretrained(
-      "Xenova/clip-vit-base-patch32"
+      "Xenova/clip-vit-base-patch32",
+      { device: "webgpu", dtype: "fp32" },
     );
     textModel = await CLIPTextModelWithProjection.from_pretrained(
-      "Xenova/clip-vit-base-patch32"
+      "Xenova/clip-vit-base-patch32",
+      { device: "webgpu", dtype: "fp32" },
     );
     const end = performance.now();
 
@@ -41,7 +46,7 @@ async function embedImage(imageBlobs: Blob[]) {
   try {
     const start = performance.now();
     const images = await Promise.all(
-      imageBlobs.map((blob) => RawImage.fromBlob(blob))
+      imageBlobs.map((blob) => RawImage.fromBlob(blob)),
     );
     const imageInputs = await processor(images);
     const { image_embeds } = await visionModel(imageInputs);
@@ -50,7 +55,8 @@ async function embedImage(imageBlobs: Blob[]) {
     return { embeddings, time: end - start };
   } catch (error) {
     throw new Error(
-      "An error occurred while embedding the image: " + (error as Error).message
+      "An error occurred while embedding the image: " +
+        (error as Error).message,
     );
   }
 }
@@ -68,7 +74,7 @@ async function embedText(text: string[]) {
     return { embeddings, time: end - start };
   } catch (error) {
     throw new Error(
-      "An error occurred while embedding the text: " + (error as Error).message
+      "An error occurred while embedding the text: " + (error as Error).message,
     );
   }
 }
